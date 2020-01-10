@@ -1,0 +1,11 @@
+---
+# vars file for nfs-client
+share_dir: /srv/share
+upload_dir: /srv/upload
+server_hostname: server.local
+path_share: /mnt/share
+path_upload: /mnt/upload
+server_ip: 192.168.20.10
+server_hostname: server.local
+client_ip: 192.168.20.11
+client_hostname: client.local

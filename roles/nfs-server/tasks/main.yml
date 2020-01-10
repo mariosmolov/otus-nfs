@@ -1,0 +1,76 @@
+---
+- name: install package
+  yum:
+   name: 
+    - epel-release
+    - mc
+    - psmisc
+    - nfs-utils
+   state: present
+
+- name: Setup hosts
+  template:
+   src: hosts.j2
+   dest: /etc/hosts
+
+- name: Running services.
+  service: 
+   name: "{{ item }}"
+   state: started 
+   enabled: yes
+  with_items:
+   - "firewalld"
+   - "nfs-server"
+   
+- name: firewalld open ports
+  firewalld:
+   service: "{{ item }}"
+   permanent: true
+   immediate: true
+   state: enabled
+  with_items:
+   - "nfs3"
+   - "rpc-bind"
+   - "mountd"
+   - "nfs"
+  notify:
+  - reload firewalld
+
+- name: Ensure nfsmount directory exists
+  file:
+   path: "{{ share_dir }}"
+   state: directory 
+   owner: root 
+   group: root 
+   mode: 0755
+
+- name: Ensure nfsmount directory exists
+  file:
+   path: "{{ upload_dir }}"
+   state: directory 
+   owner: vagrant
+   group: vagrant
+   mode: 0755
+
+- name: Config nfs.conf
+  blockinfile:
+   path: /etc/nfs.conf
+   block: |
+    [nfsd]
+    udp=y
+    tcp=n
+    vers2=n
+    vers3=y
+    vers4=n
+    vers4.0=n
+    vers4.1=n
+    vers4.2=n
+   insertafter: "^#[nfsd]"
+
+- name: Setup exports
+  template:
+    src: share.j2
+    dest: /etc/exports.d/share.exports
+  notify:
+  - reload nfs
+

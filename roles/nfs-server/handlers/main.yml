@@ -1,0 +1,10 @@
+---
+# handlers file for nfs-server
+- name: reload firewalld
+  service:
+   name: firewalld
+   state: reloaded
+- name: reload nfs
+  service:
+   name: nfs-server
+   state: reloaded

@@ -1,0 +1,61 @@
+---
+- name: install package
+  yum:
+    name:
+     - epel-release
+     - mc
+     - psmisc
+     - nfs-utils
+    state: present
+
+- name: Setup hosts
+  template:
+    src: hosts.j2
+    dest: /etc/hosts
+
+- name: Running services.
+  service:
+   name: nfs-client.target
+   state: started
+   enabled: yes
+
+- name: Create mountpoint
+  file:
+   path: "{{ item }}"
+   state: directory
+  with_items: ['path_share','path_upload']
+
+- name: Mount share
+  mount:
+   path: "{{ path_share }}"
+   src: "{{ server_hostname }}:{{ share_dir }}"
+   fstype: nfs 
+   opts: 'ro,sync,nfsvers=3,proto=udp,x-systemd.automount'
+   state: mounted
+
+- name: Mount upload
+  mount:
+   path: "{{ path_upload }}"
+   src: "{{ server_hostname }}:{{ upload_dir }}"
+   fstype: nfs 
+   opts: 'rw,sync,nfsvers=3,proto=udp,x-systemd.automount'
+   state: mounted
+
+
+- name: system restart
+  reboot:
+     reboot_timeout: 120
+
+- name: find files on RO-share
+  find:
+    path: "{{ path_share }}"
+
+- name: Touch file on RW-share
+  lineinfile:
+    path: "{{ path_upload }}/test"
+    line: "NFS:This work is DONE"
+    owner: vagrant
+    group: vagrant
+    create: yes
+- name: Done
+  command: cat "{{ path_upload }}/test"
